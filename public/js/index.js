@@ -1,23 +1,3 @@
-WarpGroup = function (game) {
-    Phaser.Group.call(this, game, null);
-
-    this.threads = [];
-    for(var i= 0; i<9; i++){
-                this.threads[i] = this.create(i*30, 0, 'thread');
-    }
-};
-
-WarpGroup.prototype = Object.create(Phaser.Group.prototype);
-
-WarpGroup.prototype.constructor = WarpGroup;
-
-// Extension Method to Phaser.Group which tints all the items it contains
-Phaser.Group.prototype.tint = function(colour){
-    this.forEach(function(item) {
-        item.tint = colour;
-    }, this);
-}
-
 var GameState = function(game) {
 };
 
@@ -25,11 +5,9 @@ var GameState = function(game) {
 GameState.prototype.preload = function() {
     this.game.load.image('ground', '/assets/ground.png');
     this.game.load.image('player', '/assets/nes.png');
-        this.game.load.image('canoe', '/assets/boulder.png');
-    this.game.load.image('person1', '/assets/depth.png');
-    this.game.load.image('person2', '/assets/depth.png');
     this.game.load.image('boulder', '/assets/boulder.png');
     this.game.load.image('depth', '/assets/depth.png');
+    this.game.load.image('power', '/assets/power.png');
 };
 
 // Setup the example
@@ -86,24 +64,35 @@ this.player.body.gravity.y = 100 + Math.random() * 100;
 
     this.ball = this.game.add.group();
     this.ball.enableBody = true;
+    this.ball.physicsBodyType = Phaser.Physics.ARCADE;
 
     this.boulder = this.ball.create(this.game.width/2, this.game.height - 64, 'boulder');
+    //this.game.physics.enable(this.boulder, Phaser.Physics.ARCADE);
+    //this.boulder.body.allowGravity = false;
+    this.boulder.body.collideWorldBounds=true;
+    //this.boulder.body.gravity.y = 100 + Math.random() * 100;
+
     this.depth = this.ball.create(this.game.width/2, this.game.height - 64, 'depth');
 
-    this.boulder.anchor.setTo(0.5, 0.5);
-    this.boulder.scale.setTo(2, 2);
-    this.depth.anchor.setTo(0.5, 0.5);
-    this.depth.scale.setTo(2, 2);
+    this.ball.setAll('anchor.x', 0.5);
+    this.ball.setAll('anchor.y', 0.5);
 
-    
+    this.ball.setAll('checkWorldBounds', true);
 
-    this.game.input.onDown.add(this.changeTint, this);
-};
+    this.ball.forEach(function(item) {  item.body.setSize(64, 64);});
 
-GameState.prototype.changeTint = function() {
-    this.ball.tint( Math.random() * 0xffffff);
+    this.hudLayer = this.game.add.group();
 
-    this.ground.tint( Math.random() * 0xffffff);
+    var power_x = 100;
+    var power_y = 100;
+    this.powerbar = this.game.add.group();
+    this.powerbar.create(power_x, power_y + 50, 'power');
+    this.powerbar.create(power_x, power_y + 60, 'power');
+    this.powerbar.create(power_x, power_y + 70, 'power');
+    this.powerbar.create(power_x, power_y + 80, 'power');
+
+    //this.powerbar.setAll('tint', 0xfff300);
+    this.hudLayer.add(this.powerbar);
 };
 
 // The update() method is called every frame
@@ -122,8 +111,9 @@ GameState.prototype.update = function() {
         this.player.body.velocity.x = 0;
     }
 
-
-    //game.physics.arcade.collide(this.player, this.ball);
+    if (this.game.physics.arcade.collide(this.player, this.ball)) {
+        //this.ball.setAll('tint', Math.random() * 0xffffff);
+    }
 /*
     if (!Phaser.Point.equals(this.boulder.body.velocity,new Phaser.Point(0,0) ) ){
         this.boulder.angle += 1;
@@ -131,7 +121,8 @@ GameState.prototype.update = function() {
     }
 */
 
-if (this.game.input.mousePointer.isDown)
+/*
+    if (this.game.input.mousePointer.isDown)
     {
         //  First is the callback
         //  Second is the context in which the callback runs, in this case game.physics.arcade
@@ -143,11 +134,17 @@ if (this.game.input.mousePointer.isDown)
         this.ball.setAll('body.velocity.x', 0);
         this.ball.setAll('body.velocity.y', 0);
     }
+*/
+    this.depth.x = this.boulder.x;
+    this.depth.y = this.boulder.y;
+    this.depth.body.velocity = this.boulder.body.velocity;
 
     if (this.boulder.body.velocity.x > 0) {
-        this.boulder.angle += 10;
+        this.boulder.angle += 5;
+        
+//        this.game.physics.arcade.moveToObject(this.depth, this.boulder, 200);
     } else if (this.boulder.body.velocity.x < 0) {
-this.boulder.angle -= 10;
+        this.boulder.angle -= 5;
     }
 
     game.physics.arcade.collide(this.ball, this.ground);
@@ -157,12 +154,12 @@ GameState.prototype.render = function() {
     //game.debug.body(this.boulder);
     //game.debug.body(this.depth);
     //game.debug.body(this.ball);
-    game.debug.spriteInfo(this.boulder, 32, 32);
-    game.debug.text('velocity: ' + this.boulder.body.velocity, 32, 200);
-    game.debug.text('angularVelocity: ' + this.boulder.body.angularVelocity, 32, 232);
-    game.debug.text('angularAcceleration: ' + this.boulder.body.angularAcceleration, 32, 264);
-     game.debug.text('angularDrag: ' + this.boulder.body.angularDrag, 32, 296);
-     game.debug.text('deltaZ: ' + this.boulder.body.deltaZ(), 32, 328);
+    //game.debug.spriteInfo(this.boulder, 32, 32);
+    //game.debug.text('velocity: ' + this.boulder.body.velocity, 32, 200);
+    //game.debug.text('angularVelocity: ' + this.boulder.body.angularVelocity, 32, 232);
+    //game.debug.text('angularAcceleration: ' + this.boulder.body.angularAcceleration, 32, 264);
+     //game.debug.text('angularDrag: ' + this.boulder.body.angularDrag, 32, 296);
+     //game.debug.text('deltaZ: ' + this.boulder.body.deltaZ(), 32, 328);
 };
 
 // This function should return true when the player activates the "go left" control
